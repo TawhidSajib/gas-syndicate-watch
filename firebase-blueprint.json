@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "Complaint": {
+      "title": "Complaint",
+      "description": "A citizen complaint reporting a shop or syndicate selling gas cylinders at inflated prices.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of complaint document.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "shopName": {
+          "type": "string",
+          "description": "Name of the retail gas cylinder shop or distributor.",
+          "minLength": 2,
+          "maxLength": 150
+        },
+        "shopAddress": {
+          "type": "string",
+          "description": "Full street address or location of the shop.",
+          "minLength": 5,
+          "maxLength": 300
+        },
+        "district": {
+          "type": "string",
+          "description": "District, city, or municipal region of the shop.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "cylinderBrand": {
+          "type": "string",
+          "description": "Brand of the gas cylinder (e.g. Bashundhara, Omera, Jamuna, Beximco, Total, BM, etc.).",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "cylinderSize": {
+          "type": "string",
+          "description": "Cylinder weight capacity (e.g., 12kg, 35kg, 45kg).",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "govtPrice": {
+          "type": "number",
+          "description": "Official government fixed price or recommended retail price in currency."
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "Actual inflated selling price demanded by the shop."
+        },
+        "markupAmount": {
+          "type": "number",
+          "description": "Excess markup amount imposed by the syndicate (sellingPrice - govtPrice)."
+        },
+        "syndicateTactic": {
+          "type": "string",
+          "description": "Syndicate tactic observed (e.g., artificial shortage, hidden stock, receipt refusal, cartel fixing).",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional context or witness notes.",
+          "maxLength": 1000
+        },
+        "evidencePhotoUrl": {
+          "type": "string",
+          "description": "Photo evidence of the shop signboard, cylinder stock, or price board.",
+          "maxLength": 500000
+        },
+        "userId": {
+          "type": "string",
+          "description": "Google UID of the reporting user.",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Public display name of the reporting user from their Google account.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Verified Gmail address of the reporting user.",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the complaint report.",
+          "enum": ["active", "under_review", "verified_syndicate"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when the complaint was submitted."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp exactly 15 days after submission when complaint expires."
+        }
+      },
+      "required": [
+        "shopName",
+        "shopAddress",
+        "district",
+        "cylinderBrand",
+        "cylinderSize",
+        "govtPrice",
+        "sellingPrice",
+        "markupAmount",
+        "userId",
+        "userName",
+        "userEmail",
+        "createdAt",
+        "expiresAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Stored user profile holding only user's Gmail address and name for 15-day session tracking.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Google UID of user.",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Name from Google account.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Gmail address from Google account.",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of most recent Google login."
+        },
+        "sessionExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "15-day expiration timestamp for the user session."
+        }
+      },
+      "required": ["userId", "userName", "userEmail", "lastLoginAt", "sessionExpiresAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Platform administrator who can check all complaint posts with user Gmail & names and remove/moderate posts.",
+      "type": "object",
+      "properties": {
+        "adminId": {
+          "type": "string",
+          "description": "UID of the admin user.",
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "email": {
+          "type": "string",
+          "description": "Admin email address.",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "description": "Role level.",
+          "enum": ["admin", "superadmin"]
+        }
+      },
+      "required": ["adminId", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/complaints/{complaintId}": {
+      "schema": "Complaint",
+      "description": "Citizen reports of gas cylinder price gouging and syndicate markups."
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile containing only Gmail address and name."
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Platform administrator accounts authorized to moderate complaints."
+    }
+  }
+}

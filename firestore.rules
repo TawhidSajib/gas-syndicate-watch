@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'tawhidsajib9@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidComplaint(data) {
+      return data.keys().hasAll([
+        'shopName', 'shopAddress', 'district', 'cylinderBrand',
+        'cylinderSize', 'govtPrice', 'sellingPrice', 'markupAmount',
+        'userId', 'userName', 'userEmail', 'createdAt', 'expiresAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'shopName', 'shopAddress', 'district', 'cylinderBrand',
+        'cylinderSize', 'govtPrice', 'sellingPrice', 'markupAmount',
+        'syndicateTactic', 'notes', 'evidencePhotoUrl', 'status',
+        'userId', 'userName', 'userEmail', 'createdAt', 'expiresAt'
+      ]) &&
+      data.userId == request.auth.uid &&
+      data.userEmail == request.auth.token.email &&
+      (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+      data.shopName is string && data.shopName.size() >= 2 && data.shopName.size() <= 150 &&
+      data.shopAddress is string && data.shopAddress.size() >= 5 && data.shopAddress.size() <= 300 &&
+      data.district is string && data.district.size() >= 2 && data.district.size() <= 80 &&
+      data.cylinderBrand is string && data.cylinderBrand.size() >= 2 && data.cylinderBrand.size() <= 80 &&
+      data.cylinderSize is string && data.cylinderSize.size() >= 2 && data.cylinderSize.size() <= 30 &&
+      data.govtPrice is number && data.govtPrice >= 0 &&
+      data.sellingPrice is number && data.sellingPrice >= 0 &&
+      data.markupAmount is number && data.markupAmount >= 0 &&
+      data.userName is string && data.userName.size() <= 120 &&
+      data.userEmail is string && data.userEmail.size() <= 150 &&
+      (!('syndicateTactic' in data) || (data.syndicateTactic is string && data.syndicateTactic.size() <= 100)) &&
+      (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+      (!('evidencePhotoUrl' in data) || (data.evidencePhotoUrl is string && data.evidencePhotoUrl.size() <= 1000000)) &&
+      (!('status' in data) || (data.status in ['active', 'under_review', 'verified_syndicate']));
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'userName', 'userEmail', 'lastLoginAt', 'sessionExpiresAt']) &&
+      data.keys().hasOnly(['userId', 'userName', 'userEmail', 'lastLoginAt', 'sessionExpiresAt']) &&
+      data.userId == request.auth.uid &&
+      data.userEmail == request.auth.token.email &&
+      data.userName is string && data.userName.size() <= 120 &&
+      data.userEmail is string && data.userEmail.size() <= 150;
+    }
+
+    match /complaints/{complaintId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(complaintId) && isValidComplaint(incoming());
+      allow update: if isSignedIn() && isValidId(complaintId) && (
+        (existing().userId == request.auth.uid && isValidComplaint(incoming()) &&
+         incoming().userId == existing().userId &&
+         incoming().userEmail == existing().userEmail &&
+         incoming().createdAt == existing().createdAt) ||
+        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+         incoming().status in ['active', 'under_review', 'verified_syndicate'])
+      );
+      allow delete: if isSignedIn() && isValidId(complaintId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUserProfile(incoming());
+      allow delete: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /admins/{adminId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

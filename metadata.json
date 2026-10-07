@@ -1,0 +1,7 @@
+{
+  "name": "Gas Syndicate Watch - Cylinder Price Complaint Portal",
+  "description": "Public reporting and complaint platform to expose LPG gas cylinder syndicates and illegal markups with photo evidence, shop tracking, and verified complaints.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
