@@ -540,7 +540,7 @@ export default function App() {
           <div className="flex items-center space-x-6 text-slate-400">
             <span>15-Day Auto-Purge Database</span>
             <span>Zero Third-Party Tracking</span>
-            <span>Only Gmail & Name Stored</span>
+            <span>Design & Development by Tawhid Sajib</span>
           </div>
         </div>
       </footer>
